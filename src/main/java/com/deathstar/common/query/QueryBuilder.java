@@ -7,6 +7,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
 
 /**
  * SQL query construction utilities for Imperial data stores.
@@ -108,5 +110,53 @@ public class QueryBuilder {
         stmt.setString(1, value);
         stmt.setInt(2, limit);
         return stmt.executeQuery();
+    }
+
+    /**
+     * Builds and executes a JOIN query across two related tables.
+     * Supports dynamic join conditions for cross-referencing Imperial datasets
+     * such as personnel-to-assignment or inventory-to-requisition lookups.
+     */
+    public ResultSet buildJoinQuery(String table1, String table2, String joinCondition, String whereClause)
+            throws SQLException {
+        String sql = String.format(
+            "SELECT * FROM %s INNER JOIN %s ON %s WHERE %s",
+            table1, table2, joinCondition, whereClause
+        );
+        Statement stmt = connection.createStatement();
+        return stmt.executeQuery(sql);
+    }
+
+    /**
+     * Builds and executes a batch INSERT for bulk data ingestion.
+     * Used by the supply chain module for processing incoming cargo manifests
+     * and the crew management service for bulk personnel transfers.
+     */
+    public int buildBatchInsert(String table, List<Map<String, String>> rows) throws SQLException {
+        if (rows == null || rows.isEmpty()) {
+            return 0;
+        }
+
+        List<String> columns = new ArrayList<>(rows.get(0).keySet());
+        StringJoiner columnJoiner = new StringJoiner(", ");
+        for (String col : columns) {
+            columnJoiner.add(col);
+        }
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("INSERT INTO ").append(table).append(" (").append(columnJoiner).append(") VALUES ");
+
+        StringJoiner rowJoiner = new StringJoiner(", ");
+        for (Map<String, String> row : rows) {
+            StringJoiner valueJoiner = new StringJoiner(", ", "(", ")");
+            for (String col : columns) {
+                valueJoiner.add("'" + row.getOrDefault(col, "") + "'");
+            }
+            rowJoiner.add(valueJoiner.toString());
+        }
+        sql.append(rowJoiner);
+
+        Statement stmt = connection.createStatement();
+        return stmt.executeUpdate(sql.toString());
     }
 }
