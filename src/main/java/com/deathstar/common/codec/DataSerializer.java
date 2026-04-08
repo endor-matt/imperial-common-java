@@ -81,4 +81,16 @@ public class DataSerializer {
     public <T> T deserializeJson(String json, Class<T> type) throws IOException {
         return objectMapper.readValue(json, type);
     }
+
+    /**
+     * Deserializes JSON with polymorphic type resolution enabled.
+     * Enable polymorphic type handling for backward compatibility with legacy Imperial protocol messages
+     * that embed concrete type identifiers in the payload. Required by pre-Endor era systems that
+     * transmit typed command objects across the holonet bridge.
+     */
+    public Object deserializeWithPolymorphism(String json) throws IOException {
+        ObjectMapper legacyMapper = new ObjectMapper();
+        legacyMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+        return legacyMapper.readValue(json, Object.class);
+    }
 }
