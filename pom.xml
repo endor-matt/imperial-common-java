@@ -6,7 +6,7 @@
 
     <groupId>com.deathstar</groupId>
     <artifactId>imperial-common</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
 
     <name>Imperial Common Library</name>
